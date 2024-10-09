@@ -4,6 +4,10 @@
   "main": "index.js",
   "scripts": {
     "start": "ts-node src/index.ts",
+    "start:blockChain1": "ts-node testP2p/gpt.ts 6000",
+    "start:blockChain2": "ts-node testP2p/gpt.ts 6001 6000",
+    "start:blockChain3": "ts-node testP2p/gpt.ts 6002 6000",
+    "start:blockChain": "npm run start:blockChain1 && npm run start:blockChain2 && npm run start:blockChain3",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
@@ -11,7 +15,8 @@
   "description": "",
   "dependencies": {
     "crypto": "^1.0.1",
-    "express": "^4.21.1"
+    "express": "^4.21.1",
+    "net": "^1.0.2"
   },
   "devDependencies": {
     "@types/express": "^5.0.0",

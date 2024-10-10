@@ -26,7 +26,6 @@ export function setupManageIncommingConnection({ blockchain, socket, port, ip }:
     socket.on("data", (data) => {
         console.log("i am port :", port);
         const message = data.toString();
-
         try {
             const receivedChain: Block[] = JSON.parse(message);
             blockchain.syncChain(receivedChain);

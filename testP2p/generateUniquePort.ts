@@ -3,7 +3,7 @@ const net = require('net');
 const commonPorts = [80, 443, 3000, 5000, 5432, 3306, 27017];
 
 function getRandomPort() {
-    let port;
+    let port: number = 0;
     do {
         port = Math.floor(Math.random() * (65535 - 1024) + 1024);
     } while (commonPorts.includes(port));

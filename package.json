@@ -4,6 +4,7 @@
   "main": "index.js",
   "scripts": {
     "start": "ts-node src/index.ts",
+    "start:simulation": "ts-node testP2p/createChain.ts",
     "start:blockChain1": "ts-node testP2p/gpt.ts 6000",
     "start:blockChain2": "ts-node testP2p/gpt.ts 6001 6000",
     "start:blockChain3": "ts-node testP2p/gpt.ts 6002 6000",

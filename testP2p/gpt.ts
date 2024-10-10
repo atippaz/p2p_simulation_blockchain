@@ -70,7 +70,6 @@ class Blockchain {
 const blockchain = new Blockchain();
 const peers: string[] = []; // เก็บรายการ peers ทั้งหมด
 
-// ฟังก์ชัน broadcast Blockchain ไปยัง peers อื่นๆ
 function broadcastToPeers(message: string, excludePort?: number) {
   peers.forEach((peer) => {
     const [peerIp, peerPort] = peer.split(":");
@@ -109,7 +108,7 @@ function createNode(port: number, peerPort?: number) {
         blockchain.addBlock(
           new Block(blockchain.chain.length, new Date().toISOString(), message)
         );
-        broadcastBlockchain(); // อัปเดต peers ทุกคนเมื่อมีการเพิ่มบล็อกใหม่
+        broadcastBlockchain();
       }
 
       console.log(

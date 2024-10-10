@@ -45,7 +45,7 @@ export class createNode {
         const ipPort = peerIp.split(":");
         const peerPort = +ipPort[1];
         const peerip = ipPort[0];
-        this.context.peerList.push({ ip: peerip, port: peerPort });
+        this.context.peerList.push({ ip: peerip, port: peerPort, nodeId: "" });
         setupConnectToOtherNode(this.context);
       }
     });

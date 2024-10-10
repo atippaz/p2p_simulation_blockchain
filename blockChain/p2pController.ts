@@ -36,25 +36,35 @@ export function setupManageIncommingConnection({
   context: Context;
 }) {
   socket.on("data", (data) => {
-    console.log("i am port :", context.port);
     const response = JSON.parse(data.toString()) as CommunicateMessage;
     try {
       if (response.type === COMMUICATE.JOINCHAIN) {
+        if (context.peerList.length == 0) {
+          const nodeId =
+            Math.random().toString(36).substring(2, 15) +
+            Math.random().toString(36).substring(2, 15);
+          context!.peerList.push({
+            ip: socket.localAddress,
+            port: socket.localPort,
+            nodeId: nodeId,
+          });
+        }
         const nodeId =
           Math.random().toString(36).substring(2, 15) +
           Math.random().toString(36).substring(2, 15);
+        console.log(socket.remotePort);
         context.peerList.push({
-          ip: response.data.ip,
+          ip: socket.remoteAddress,
           port: response.data.port,
           nodeId: nodeId,
         });
         const receivedChain = [response];
         blockchain.syncChain(receivedChain);
-        context.peerList.push({
-          ip: context.ip,
-          port: context.port,
-          nodeId: nodeId,
-        });
+        // context.peerList.push({
+        //   ip: context.ip,
+        //   port: context.port,
+        //   nodeId: nodeId,
+        // });
         socket.write(
           JSON.stringify({
             data: {
@@ -103,15 +113,8 @@ export function setupConnectToOtherNode(context: Context) {
         } as CommunicateMessage<NewConnectionRequest>)
       );
       client.on("data", async (data) => {
-        console.log(
-          "i am port: ",
-          context.port,
-          " i recipt some response form ",
-          data
-        );
         const response = JSON.parse(data.toString()) as CommunicateMessage;
         if (response.type === COMMUICATE.ACCEPTTOJOIN) {
-          console.log(response.data);
           context.nodeId = (response.data as AcceptJoin).nodeId;
           client.write(
             JSON.stringify({
@@ -120,7 +123,6 @@ export function setupConnectToOtherNode(context: Context) {
             })
           );
         } else if (response.type === COMMUICATE.RESPONSEPEERLIST) {
-          console.log(response.data);
           context.peerList.slice(0, context.peerList.length - 1);
           context.peerList.push(...(response.data as AddressIp[]));
           const datas = await Promise.all([]);

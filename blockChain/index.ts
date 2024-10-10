@@ -48,6 +48,12 @@ export class createNode {
         });
         return this.server;
     }
+    getPeerList() {
+        return this.peerlist
+    }
+    getChainData() {
+        return this.blockChain
+    }
 }
 
 // การอ่านข้อมูลจาก command line เพื่อส่งไปยัง peers

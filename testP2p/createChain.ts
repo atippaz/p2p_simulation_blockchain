@@ -1,11 +1,11 @@
-import { initBlockToChain } from "./template";
+import { AddressInfo } from "net";
+import { createNode } from "../blockChain";
 
 function main() {
-  const server1 = initBlockToChain(6000);
-  server1.start();
-  const server2 = initBlockToChain(6001);
-  server2.start();
-  const server3 = initBlockToChain(6002);
-  server3.start();
+  const server1 = new createNode().start(6000);
+  const peer1Ip = server1!.address() as AddressInfo
+  const server2 = new createNode().start(6001, (peer1Ip.address == '::' ? '127.0.0.1:' : peer1Ip.address) + peer1Ip.port);
+  // const server3 = createNode(6002);
+  // server3.start();
 }
 main();

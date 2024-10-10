@@ -1,8 +1,9 @@
 const peers: string[] = [];
-import { Block, Blockchain, PersonalProfile } from "./class";
+import { Block, Blockchain, } from "./class";
 import * as net from "net";
 import {
     AcceptJoin,
+    AddressIp,
     COMMUICATE,
     CommunicateMessage,
     NewConnectionRequest,
@@ -10,27 +11,39 @@ import {
 import { setupConnectToOtherNode, setupManageIncommingConnection } from "./p2pController";
 
 export class createNode {
-    private context: null | PersonalProfile = null;
-    private server: net.Server;
-    private peerIp: string | undefined
+    private nodeId: string | undefined
+    private port: number | undefined
+    private ip: string | undefined
+    private server: net.Server
+    private peerlist: AddressIp[] = []
+    private blockChain: Blockchain
     constructor() {
+        this.blockChain = new Blockchain()
         this.server = net.createServer((socket) => {
-            this.context = new PersonalProfile(socket)
-            this.context.setAddress({
-                port: socket.localPort
+            this.ip = socket.remoteAddress
+            setupManageIncommingConnection({
+                blockchain: this.blockChain,
+                ip: this.ip!,
+                port: this.port!,
+                socket: socket
             })
-            setupManageIncommingConnection(this.context)
         });
     }
     start(port: number, peerIp?: string) {
-        this.peerIp = peerIp
+        this.port = port
         this.server.listen(port, () => {
-            console.log(`Node on port ${''}: Listening on port ${port}`);
-            if (this.peerIp) {
-                const ipPort = this.peerIp.split(":");
+            console.log(`Node on port ${''}: Listening on port ${this.port}`);
+            if (peerIp) {
+                const ipPort = peerIp.split(":");
                 const peerPort = +ipPort[1];
                 const peerip = ipPort[0];
-                setupConnectToOtherNode(this.context!, peerip, peerPort)
+                this.peerlist.push({ ip: peerip, port: peerPort })
+                setupConnectToOtherNode({
+                    ip: this.ip!,
+                    nodeId: this.nodeId!,
+                    peerList: this.peerlist!,
+                    port: this.port!
+                })
             }
         });
         return this.server;

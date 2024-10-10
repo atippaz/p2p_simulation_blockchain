@@ -1,6 +1,6 @@
-import { Block, PersonalProfile } from "./class";
+import { Block, Blockchain, } from "./class";
 import * as net from 'net'
-import { AcceptJoin, COMMUICATE, CommunicateMessage, NewConnectionRequest } from "./interface";
+import { AcceptJoin, AddressIp, COMMUICATE, CommunicateMessage, NewConnectionRequest } from "./interface";
 // function broadcastToPeers(message: string, excludePort?: number) {
 //     peers.forEach((peer) => {
 //       const [peerIp, peerPort] = peer.split(":");
@@ -19,10 +19,7 @@ import { AcceptJoin, COMMUICATE, CommunicateMessage, NewConnectionRequest } from
 //     broadcastToPeers(chainData);
 //   }
 
-export function setupManageIncommingConnection(context: PersonalProfile) {
-    const socket = context.getSocket()
-    const blockchain = context.getBlockchain()
-    const { port, ip } = context.getAddress()
+export function setupManageIncommingConnection({ blockchain, socket, port, ip }: { blockchain: Blockchain, socket: net.Socket, port: number, ip: string }) {
     const splitIp = socket.remoteAddress?.split(":") || [];
     const clientIp = splitIp[splitIp.length - 1];
     const clientPort = socket.remotePort;
@@ -48,11 +45,12 @@ export function setupManageIncommingConnection(context: PersonalProfile) {
         console.log(`Node on port ${port}: Connection closed`);
     });
 }
-export function setupConnectToOtherNode(context: PersonalProfile, peerIp: string, peerPort: number) {
+export function setupConnectToOtherNode({
+    port, ip, peerList, nodeId
+}: { port: number, ip: string, peerList: AddressIp[], nodeId: string }) {
     const client = new net.Socket();
-    const { ip, port } = context.getAddress()
 
-    client.connect(peerPort, peerIp, () => {
+    client.connect(peerList[peerList.length - 1].port!, peerList[peerList.length - 1].ip!, () => {
         client.write(
             JSON.stringify({
                 data: {
@@ -72,13 +70,10 @@ export function setupConnectToOtherNode(context: PersonalProfile, peerIp: string
             const response = JSON.parse(data.toString()) as CommunicateMessage;
             if (response.type === COMMUICATE.ACCEPTTOJOIN) {
                 console.log(response.data);
-                context.setNodeId((response.data as AcceptJoin).nodeId);
+                nodeId = ((response.data as AcceptJoin).nodeId);
             }
             client.end();
         });
     });
-    context.setListPeerIps([...context.getListPeerIps(), {
-        ip: `127.0.0.1`,
-        port: peerPort
-    }])
+
 }

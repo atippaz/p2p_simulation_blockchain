@@ -105,48 +105,40 @@ export class Blockchain {
         return true;
     }
 }
-export class PersonalProfile {
-    private address: AddressIp
-    private nodeId: string
-    private listPeerips: AddressIp[]
-    private socket: net.Socket
-    private blockchain: Blockchain
-    constructor(
-        socket: net.Socket,
-        address?: AddressIp,
-        nodeId?: string | null,
-        listPeerips?: AddressIp[],
-    ) {
-        this.listPeerips = listPeerips || []
-        this.nodeId = nodeId || ''
-        this.address = address || {}
-        this.socket = socket
-        this.blockchain = new Blockchain()
-    }
-    getSocket() {
-        return this.socket
-    }
-    getBlockchain() {
-        return this.blockchain
-    }
-    getAddress() {
-        return this.address
-    }
-    getNodeId() {
-        return this.nodeId
-    }
-    getListPeerIps() {
-        return this.listPeerips
-    }
-    setAddress({ port, ip }: AddressIp) {
-        port && (this.address!.port = port)
-        ip && (this.address!.ip = ip)
-    }
-    setNodeId(nodeId: string) {
-        this.nodeId = nodeId
-    }
-    setListPeerIps(addresses: AddressIp[]) {
-        this.listPeerips = addresses
-    }
+// export class PersonalProfile {
+//     private nodeId: string
+//     private listPeerips: AddressIp[]
+//     private socket: net.Socket
+//     private blockchain: Blockchain
+//     constructor(
+//         socket?: net.Socket,
+//         nodeId?: string | null,
+//         listPeerips?: AddressIp[],
+//     ) {
+//         this.listPeerips = listPeerips || []
+//         this.nodeId = nodeId || ''
+//         this.socket = socket
+//         this.blockchain = new Blockchain()
+//     }
+//     getSocket() {
+//         return this.socket
+//     }
+//     getBlockchain() {
+//         return this.blockchain
+//     }
 
-}
+//     getNodeId() {
+//         return this.nodeId
+//     }
+//     getListPeerIps() {
+//         return this.listPeerips
+//     }
+
+//     setNodeId(nodeId: string) {
+//         this.nodeId = nodeId
+//     }
+//     setListPeerIps(addresses: AddressIp[]) {
+//         this.listPeerips = addresses
+//     }
+
+// }

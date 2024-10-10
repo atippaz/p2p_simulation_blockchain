@@ -1,59 +1,70 @@
 const peers: string[] = [];
-import { Block, Blockchain, } from "./class";
+import { Block, Blockchain } from "./class";
 import * as net from "net";
 import {
-    AcceptJoin,
-    AddressIp,
-    COMMUICATE,
-    CommunicateMessage,
-    NewConnectionRequest,
+  AcceptJoin,
+  AddressIp,
+  COMMUICATE,
+  CommunicateMessage,
+  NewConnectionRequest,
 } from "./interface";
-import { setupConnectToOtherNode, setupManageIncommingConnection } from "./p2pController";
-
+import {
+  setupConnectToOtherNode,
+  setupManageIncommingConnection,
+} from "./p2pController";
+export class Context {
+  port: number;
+  peerList: AddressIp[];
+  nodeId: string;
+  ip: string;
+  constructor(port: number, peerlist: AddressIp[], nodeId: string, ip: string) {
+    this.port = port;
+    this.peerList = peerlist;
+    this.nodeId = nodeId;
+    this.ip = ip;
+  }
+}
 export class createNode {
-    private nodeId: string | undefined
-    private port: number | undefined
-    private ip: string | undefined
-    private server: net.Server
-    private peerlist: AddressIp[] = []
-    private blockChain: Blockchain
-    constructor() {
-        this.blockChain = new Blockchain()
-        this.server = net.createServer((socket) => {
-            this.ip = socket.remoteAddress
-            setupManageIncommingConnection({
-                blockchain: this.blockChain,
-                ip: this.ip!,
-                port: this.port!,
-                socket: socket
-            })
-        });
-    }
-    start(port: number, peerIp?: string) {
-        this.port = port
-        this.server.listen(port, () => {
-            console.log(`Node on port ${''}: Listening on port ${this.port}`);
-            if (peerIp) {
-                const ipPort = peerIp.split(":");
-                const peerPort = +ipPort[1];
-                const peerip = ipPort[0];
-                this.peerlist.push({ ip: peerip, port: peerPort })
-                setupConnectToOtherNode({
-                    ip: this.ip!,
-                    nodeId: this.nodeId!,
-                    peerList: this.peerlist!,
-                    port: this.port!
-                })
-            }
-        });
-        return this.server;
-    }
-    getPeerList() {
-        return this.peerlist
-    }
-    getChainData() {
-        return this.blockChain
-    }
+  private server: net.Server;
+  private blockChain: Blockchain;
+  private context: Context | null = null;
+  constructor() {
+    this.blockChain = new Blockchain();
+    this.server = net.createServer((socket) => {
+      setupManageIncommingConnection({
+        blockchain: this.blockChain,
+        socket: socket,
+        context: this.context!,
+      });
+    });
+  }
+  start(port: number, peerIp?: string) {
+    this.server.listen(port, () => {
+      this.context = new Context(port, [], "", "");
+      if (peerIp) {
+        const ipPort = peerIp.split(":");
+        const peerPort = +ipPort[1];
+        const peerip = ipPort[0];
+        this.context.peerList.push({ ip: peerip, port: peerPort });
+        setupConnectToOtherNode(this.context);
+      }
+    });
+    setInterval(() => {
+      console.log(
+        "i am port ",
+        this.context!.port,
+        " and i have list ",
+        this.context!.peerList
+      );
+    }, 10000);
+    return this.server;
+  }
+  getPeerList() {
+    return this.context!.peerList;
+  }
+  getChainData() {
+    return this.blockChain;
+  }
 }
 
 // การอ่านข้อมูลจาก command line เพื่อส่งไปยัง peers
@@ -129,4 +140,3 @@ export class createNode {
 //         }
 //     }
 // }
-

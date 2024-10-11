@@ -125,22 +125,24 @@ export async function broadcastToPeers(peers: AddressIp[], message: CommunicateM
 
     const promises = peers.map((peer) => {
         if (Number(peer.port) !== excludePort) {
-            const client = new net.Socket();
+            // const client = new net.Socket();
             return new Promise<void>((resolve) => {
-                client.connect(Number(peer.port), peer.ip!, () => {
-                    client.write(JSON.stringify(message));
-                    client.end();
-                    resolve();
-                });
+                // client.connect(Number(peer.port), peer.ip!, () => {
+                //     client.write(JSON.stringify(message));
+                //     client.end();
+                //     resolve();
+                // });
 
-                client.on('error', () => {
-                    listIpCannotConnect.push({
-                        ip: peer.ip,
-                        nodeId: peer.nodeId,
-                        port: peer.port,
-                    });
-                    resolve();
-                });
+                // client.on('error', () => {
+                //     listIpCannotConnect.push({
+                //         ip: peer.ip,
+                //         nodeId: peer.nodeId,
+                //         port: peer.port,
+                //     });
+                //     resolve();
+                // });
+                resolve();
+
             });
         }
     });

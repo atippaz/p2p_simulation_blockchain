@@ -1,10 +1,10 @@
-import { CreateNode } from "../blockChain";
-import { AddressIp, COMMUICATE } from "../blockChain/interface";
-import { broadcastToPeers } from "../blockChain/p2pController";
-import { findAvailablePort } from "./generateUniquePort";
 import * as net from "net";
 
 import readline from 'readline'
+import { findAvailablePort } from "./generateUniquePort";
+import { CreateNode } from "../objects/node";
+import { AddressIp, COMMUICATE } from "../objects/node/interface";
+import { broadcastToPeers } from "../objects/node/p2pController/request";
 function inputLoop(peerList: AddressIp[], port: number) {
     const rl = readline.createInterface({
         input: process.stdin,

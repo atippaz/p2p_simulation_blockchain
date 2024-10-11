@@ -1,26 +1,22 @@
-import { Blockchain } from "./class";
 import * as net from "net";
-import {
-  AddressIp,
-  COMMUICATE,
-  CommunicateMessage,
-} from "./interface";
-import {
-  setupConnectToOtherNode,
-  setupManageIncomingConnection,
-} from "./p2pController";
+
+import { AddressConnection } from "./addressConnection";
+import { Blockchain } from "../blockchain/blockchain";
+import { AddressIp, COMMUICATE, CommunicateMessage } from "./interface";
+import { setupManageIncomingConnection } from "./p2pController/request";
 
 export class Context {
-  port: number;
+  // port: number;
   peerList: AddressIp[];
-  nodeId: string;
-  ip: string;
+  nodeId: string | null = null;
+  connection: AddressConnection[] = []
+  socket: net.Socket | null = null
+  // ip: string;
 
-  constructor(port: number, peerList: AddressIp[], nodeId: string, ip: string) {
-    this.port = port;
+  constructor(peerList: AddressConnection[]) {
+    // this.port = port;
     this.peerList = peerList;
-    this.nodeId = nodeId;
-    this.ip = ip;
+    // this.ip = ip;
   }
 }
 
@@ -34,38 +30,29 @@ export class CreateNode {
     this.server = net.createServer((socket) => {
       setupManageIncomingConnection({
         blockchain: this.blockChain,
-        socket: socket,
         context: this.context!,
       });
     });
   }
 
   start(port: number, peerIp?: string) {
+    this.context = new Context([]);
     this.server.listen(port, () => {
-      console.log('Listening node at:', port);
-      this.context = new Context(port, [], "", "");
-
-      if (peerIp) {
-        this.connectToPeer(peerIp);
+      const addressInfo = this.server.address();
+      if (typeof addressInfo === 'object' && addressInfo !== null) {
+        console.log(`Server listening on IP: ${addressInfo.address}, Port: ${addressInfo.port}`);
+        if (peerIp) {
+          this.connectToPeer(peerIp, addressInfo, this.context!);
+        }
       }
     });
-
-    setInterval(() => {
-      console.log(
-        "I am on port ",
-        this.context!.port,
-        " and I have peer list: ",
-        this.context!.peerList
-      );
-    }, 10000);
-
     return this.server;
   }
 
-  private connectToPeer(peerIp: string) {
+  private connectToPeer(peerIp: string, server: net.AddressInfo, context: Context) {
     const [peerAddress, peerPort] = peerIp.split(":");
-    this.context!.peerList.push({ ip: peerAddress, port: +peerPort, nodeId: "" });
-    setupConnectToOtherNode(this.context!);
+    const client = new net.Socket();
+    context.connection.push(new AddressConnection(client, +peerPort, peerAddress, true))
   }
 
   getPeerList() {
@@ -92,9 +79,9 @@ export class CreateNode {
         client.write(JSON.stringify({
           type: COMMUICATE.TERMINATE_REQUEST,
           data: {
-            ip: this.context?.ip,
+            ip: this.context?.socket!.localAddress,
             nodeId: this.context?.nodeId,
-            port: this.context?.port,
+            port: this.context?.socket!.localPort,
           } as AddressIp
         } as CommunicateMessage));
 

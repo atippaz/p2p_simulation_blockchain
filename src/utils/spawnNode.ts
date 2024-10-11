@@ -65,7 +65,7 @@ async function main() {
     node.start(port, portIpSeedNode);
     setInterval(() => {
         console.log(node.getPeerList())
-        console.log(node.getConnection())
+        console.log(node.getConnection().map(x => x.nodeId))
     }, 3000);
     process.on('SIGINT', async () => {
         console.log('Received SIGINT. Terminating...');

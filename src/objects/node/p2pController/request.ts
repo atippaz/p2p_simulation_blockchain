@@ -5,8 +5,6 @@ import { AcceptJoin, AddressIp, COMMUICATE, CommunicateMessage } from "../interf
 import { Block } from "../../blockchain/block";
 import { extractIpAddress, generateNodeId } from "../../../utils/utils";
 
-
-
 function addPeer(context: Context, ip: string, port: number) {
     const nodeId = generateNodeId();
     context.peerList.push({ ip: extractIpAddress(ip), port, nodeId });

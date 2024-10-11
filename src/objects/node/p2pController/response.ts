@@ -2,7 +2,7 @@ import { Block } from "../../blockchain/block";
 import { Blockchain } from "../../blockchain/blockchain";
 import { Context } from "../../node";
 import { AddressConnection } from "../addressConnection";
-import { AddressIp, COMMUICATE, CommunicateMessage } from "../interface";
+import { AcceptJoin, AddressIp, COMMUICATE, CommunicateMessage } from "../interface";
 import * as net from 'net'
 export function setupManageResponseConnection({
     blockchain,
@@ -22,7 +22,7 @@ export function setupManageResponseConnection({
         const response: CommunicateMessage = JSON.parse(data.toString());
 
         try {
-            await handleMessage(response, context, blockchain);
+            await handleMessage(socket, response, context, blockchain);
         } catch (error) {
             console.log(error)
             blockchain.addBlock(new Block(blockchain.chain.length, new Date().toISOString(), []));
@@ -36,8 +36,15 @@ export function setupManageResponseConnection({
         // handleRequestPeerList(context)
         console.warn("Connection was reset by the sender.");
     });
-    async function handleMessage(response: CommunicateMessage, context: Context, blockchain: Blockchain) {
+    async function handleMessage(socket: net.Socket, response: CommunicateMessage, context: Context, blockchain: Blockchain) {
         switch (response.type) {
+            case COMMUICATE.ACCEPTTOJOIN:
+                context.nodeId = (response.data as AcceptJoin).nodeId;
+                socket.write(JSON.stringify({
+                    type: COMMUICATE.REQUESTPEERLIST,
+                    data: { nodeId: context.nodeId },
+                }));
+                break;
             case COMMUICATE.RESPONSEPEERLIST:
             case COMMUICATE.TERMINATE_RESPONSE:
                 updatePeerList(context, response.data as AddressIp[]);
@@ -55,6 +62,9 @@ export function setupManageResponseConnection({
         newConnection.forEach(peer => {
             const client = new net.Socket()
             context.connection.push(new AddressConnection(client, blockchain, context, peer.port!, peer.ip!))
+        })
+        context.connection.forEach(x => {
+            // x.nodeId = context.peerList.find(f=>f.ip == )
         })
         // const removeConnection = context.peerList.filter(x=>context.connection.some(s=>s.nodeId!=x.nodeId))
 

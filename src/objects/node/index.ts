@@ -28,6 +28,11 @@ export class CreateNode {
   constructor() {
     this.blockChain = new Blockchain();
     this.server = net.createServer((socket) => {
+      if (!this.context) {
+        throw Error('no context')
+      }
+      console.log('init incoming')
+      this.context.socket = socket
       setupManageIncomingConnection({
         blockchain: this.blockChain,
         context: this.context!,
@@ -36,6 +41,7 @@ export class CreateNode {
   }
 
   start(port: number, peerIp?: string) {
+
     this.context = new Context([]);
     this.server.listen(port, () => {
       const addressInfo = this.server.address();

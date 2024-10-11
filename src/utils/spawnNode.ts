@@ -45,7 +45,10 @@ async function main() {
     const portIpSeedNode = process.argv[2]
     const port = await findAvailablePort()
     const node = new CreateNode()
-    const server = node.start(port, portIpSeedNode);
+    node.start(port, portIpSeedNode);
+    setInterval(() => {
+        console.log(node.getPeerList())
+    }, 1000);
     process.on('SIGINT', async () => {
         console.log('Received SIGINT. Terminating...');
         await node.terminate();

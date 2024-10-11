@@ -3,17 +3,9 @@ import { Context } from "..";
 import { Blockchain } from "../../blockchain/blockchain";
 import { AcceptJoin, AddressIp, COMMUICATE, CommunicateMessage } from "../interface";
 import { Block } from "../../blockchain/block";
+import { extractIpAddress, generateNodeId } from "../../../utils/utils";
 
-// Utility functions
-function generateNodeId() {
-    return Math.random().toString(36).substring(2, 15) +
-        Math.random().toString(36).substring(2, 15);
-}
 
-function extractIpAddress(ip: string): string {
-    const match = ip.match(/(?:\d{1,3}\.){3}\d{1,3}/);
-    return match ? match[0] : ip;
-}
 
 function addPeer(context: Context, ip: string, port: number) {
     const nodeId = generateNodeId();
@@ -38,7 +30,6 @@ export function setupManageIncomingConnection({
             blockchain.addBlock(new Block(blockchain.chain.length, new Date().toISOString(), []));
         }
     });
-
     context.socket!.on("end", () => {
         console.log(`Node on port ${context.socket!.localPort}: Connection closed`);
     });
@@ -68,11 +59,6 @@ async function handleMessage(response: CommunicateMessage, context: Context, blo
 
         case COMMUICATE.TERMINATE_REQUEST:
             await handleTerminateRequest(context, response.data as AddressIp);
-            break;
-
-        case COMMUICATE.RESPONSEPEERLIST:
-        case COMMUICATE.TERMINATE_RESPONSE:
-            updatePeerList(context, response.data as AddressIp[]);
             break;
 
         default:

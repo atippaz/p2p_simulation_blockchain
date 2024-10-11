@@ -7,17 +7,20 @@ import { Blockchain } from "../blockchain/blockchain";
 export class AddressConnection {
     nodeId?: string = undefined;
     connection: net.Socket
+    port: number
     constructor(connection: net.Socket,
         blockchain: Blockchain,
         context: Context,
         peerPort: number,
         peerAddress: string,
+        port: number,
         getPeer: boolean = false) {
+        this.port = port
         this.connection = connection
         this.connection.connect(+peerPort, peerAddress, () => {
             if (getPeer) {
                 this.connection.write(JSON.stringify({
-                    data: { ip: this.connection.localAddress, port: this.connection.localPort },
+                    data: { ip: this.connection.localAddress, port: this.port },
                     type: COMMUICATE.JOINCHAIN,
                 } as CommunicateMessage<NewConnectionRequest>));
 
@@ -26,6 +29,7 @@ export class AddressConnection {
                 blockchain: blockchain,
                 context: context,
                 socket: this.connection,
+                port: this.port
             })
             // this.connection.on("data", async (data) => {
             //     const response: CommunicateMessage = JSON.parse(data.toString());

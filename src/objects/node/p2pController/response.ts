@@ -8,10 +8,12 @@ export function setupManageResponseConnection({
     blockchain,
     context,
     socket,
+    port
 }: {
     blockchain: Blockchain;
     context: Context;
     socket: net.Socket
+    port: number
 }) {
     console.log('init response')
     if (!socket) {
@@ -61,7 +63,7 @@ export function setupManageResponseConnection({
         const newConnection = context.peerList.filter(x => context.connection.some(s => s.nodeId != x.nodeId) && x.nodeId != context.nodeId)
         newConnection.forEach(peer => {
             const client = new net.Socket()
-            context.connection.push(new AddressConnection(client, blockchain, context, peer.port!, peer.ip!))
+            context.connection.push(new AddressConnection(client, blockchain, context, peer.port!, peer.ip!, port))
         })
         context.connection.forEach(x => {
             // x.nodeId = context.peerList.find(f=>f.ip == )

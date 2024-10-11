@@ -48,17 +48,17 @@ export class CreateNode {
       if (typeof addressInfo === 'object' && addressInfo !== null) {
         console.log(`Server listening on IP: ${addressInfo.address}, Port: ${addressInfo.port}`);
         if (peerIp) {
-          this.connectToPeer(peerIp, addressInfo, this.context!);
+          this.connectToPeer(peerIp, addressInfo, this.context!, port);
         }
       }
     });
     return this.server;
   }
 
-  private connectToPeer(peerIp: string, server: net.AddressInfo, context: Context) {
+  private connectToPeer(peerIp: string, server: net.AddressInfo, context: Context, port: number) {
     const [peerAddress, peerPort] = peerIp.split(":");
     const client = new net.Socket();
-    context.connection.push(new AddressConnection(client, this.blockChain, context, +peerPort, peerAddress, true))
+    context.connection.push(new AddressConnection(client, this.blockChain, context, +peerPort, peerAddress, port, true))
   }
 
   getPeerList() {

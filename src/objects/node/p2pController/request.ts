@@ -23,9 +23,8 @@ export function setupManageIncomingConnection({
 }) {
     context.socket!.on("data", async (data) => {
         const response: CommunicateMessage = JSON.parse(data.toString());
-
         try {
-            await handleMessage(response, context, blockchain);
+            await handleMessage(context.socket!, response, context, blockchain);
         } catch (error) {
             blockchain.addBlock(new Block(blockchain.chain.length, new Date().toISOString(), []));
         }
@@ -34,12 +33,12 @@ export function setupManageIncomingConnection({
         console.log(`Node on port ${context.socket!.localPort}: Connection closed`);
     });
     context.socket!.on("error", (error: any) => {
-        handleRequestPeerList(context)
+        handleRequestPeerList(context.socket!, context)
         console.warn("Connection was reset by the sender.");
     });
 }
 
-async function handleMessage(response: CommunicateMessage, context: Context, blockchain: Blockchain) {
+async function handleMessage(server: net.Socket, response: CommunicateMessage, context: Context, blockchain: Blockchain) {
     switch (response.type) {
         case COMMUICATE.PEER_CANNOT_CONNECT_REQUEST:
             updatePeerList(context, response.data as AddressIp[]);
@@ -47,7 +46,7 @@ async function handleMessage(response: CommunicateMessage, context: Context, blo
 
         case COMMUICATE.REQUESTPEERLIST:
             if (context.peerList.some(s => s.nodeId === response.data.nodeId)) {
-                await handleRequestPeerList(context);
+                await handleRequestPeerList(server, context);
             }
             break;
         case COMMUICATE.TEST_SAYHI:
@@ -58,7 +57,7 @@ async function handleMessage(response: CommunicateMessage, context: Context, blo
             break;
 
         case COMMUICATE.TERMINATE_REQUEST:
-            await handleTerminateRequest(context, response.data as AddressIp);
+            await handleTerminateRequest(server, context, response.data as AddressIp);
             break;
 
         default:
@@ -72,7 +71,7 @@ function updatePeerList(context: Context, newPeers: AddressIp[]) {
         : [...context.peerList, ...newPeers.filter(x => !context.peerList.some(t => t.nodeId === x.nodeId))];
 }
 
-async function handleRequestPeerList(context: Context) {
+async function handleRequestPeerList(server: net.Socket, context: Context) {
     let listFailed: AddressIp[] = [];
     let attemptCount = 0;
     const maxAttempts = 5;
@@ -89,7 +88,10 @@ async function handleRequestPeerList(context: Context) {
         context.peerList = context.peerList.filter(x => !listFailed.some(s => s.nodeId === x.nodeId));
         attemptCount++;
     } while (listFailed.length > 0 && attemptCount < maxAttempts);
-
+    server.write(JSON.stringify({
+        data: context.peerList,
+        type: COMMUICATE.RESPONSEPEERLIST,
+    }))
     if (listFailed.length > 0) {
         console.warn(`Failed to connect to peers: ${JSON.stringify(listFailed)}`);
     }
@@ -110,11 +112,11 @@ async function handleJoinChain(context: Context, response: CommunicateMessage, b
     } as CommunicateMessage<AcceptJoin>));
 }
 
-async function handleTerminateRequest(context: Context, data: AddressIp) {
+async function handleTerminateRequest(server: net.Socket, context: Context, data: AddressIp) {
     const { nodeId } = data;
     if (context.peerList.some(s => s.nodeId === nodeId)) {
         context.peerList = context.peerList.filter(x => x.nodeId !== nodeId);
-        await handleRequestPeerList(context);
+        await handleRequestPeerList(server, context);
     }
 }
 

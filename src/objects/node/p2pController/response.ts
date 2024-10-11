@@ -1,6 +1,7 @@
 import { Block } from "../../blockchain/block";
 import { Blockchain } from "../../blockchain/blockchain";
 import { Context } from "../../node";
+import { AddressConnection } from "../addressConnection";
 import { AddressIp, COMMUICATE, CommunicateMessage } from "../interface";
 import * as net from 'net'
 export function setupManageResponseConnection({
@@ -12,41 +13,55 @@ export function setupManageResponseConnection({
     context: Context;
     socket: net.Socket
 }) {
-    socket!.on("data", async (data) => {
+    console.log('init response')
+    if (!socket) {
+        console.log('wtf')
+        return
+    }
+    socket.on("data", async (data) => {
         const response: CommunicateMessage = JSON.parse(data.toString());
 
         try {
             await handleMessage(response, context, blockchain);
         } catch (error) {
+            console.log(error)
             blockchain.addBlock(new Block(blockchain.chain.length, new Date().toISOString(), []));
         }
     });
 
-    socket!.on("end", () => {
+    socket.on("end", () => {
         console.log(`Node on port ${context.socket!.localPort}: Connection closed`);
     });
-    socket!.on("error", (error: any) => {
+    socket.on("error", (error: any) => {
         // handleRequestPeerList(context)
         console.warn("Connection was reset by the sender.");
     });
-}
-async function handleMessage(response: CommunicateMessage, context: Context, blockchain: Blockchain) {
-    switch (response.type) {
-        case COMMUICATE.RESPONSEPEERLIST:
-        case COMMUICATE.TERMINATE_RESPONSE:
-            updatePeerList(context, response.data as AddressIp[]);
-            break;
+    async function handleMessage(response: CommunicateMessage, context: Context, blockchain: Blockchain) {
+        switch (response.type) {
+            case COMMUICATE.RESPONSEPEERLIST:
+            case COMMUICATE.TERMINATE_RESPONSE:
+                updatePeerList(context, response.data as AddressIp[]);
+                break;
 
-        default:
-            throw new Error("Unknown message type");
+            default:
+                throw new Error("Unknown message type");
+        }
+    }
+    function updatePeerList(context: Context, newPeers: AddressIp[]) {
+        context.peerList = context.peerList.length <= 1
+            ? newPeers
+            : [...context.peerList, ...newPeers.filter(x => !context.peerList.some(t => t.nodeId === x.nodeId))];
+        const newConnection = context.peerList.filter(x => context.connection.some(s => s.nodeId != x.nodeId) && x.nodeId != context.nodeId)
+        newConnection.forEach(peer => {
+            const client = new net.Socket()
+            context.connection.push(new AddressConnection(client, blockchain, context, peer.port!, peer.ip!))
+        })
+        // const removeConnection = context.peerList.filter(x=>context.connection.some(s=>s.nodeId!=x.nodeId))
+
     }
 }
 
-function updatePeerList(context: Context, newPeers: AddressIp[]) {
-    context.peerList = context.peerList.length <= 1
-        ? newPeers
-        : [...context.peerList, ...newPeers.filter(x => !context.peerList.some(t => t.nodeId === x.nodeId))];
-}
+
 
 // async function handleRequestPeerList(context: Context) {
 //     let listFailed: AddressIp[] = [];

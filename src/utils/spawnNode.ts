@@ -4,8 +4,8 @@ import readline from 'readline'
 import { findAvailablePort } from "./generateUniquePort";
 import { CreateNode } from "../objects/node";
 import { AddressIp, COMMUICATE } from "../objects/node/interface";
-import { broadcastToPeers } from "../objects/node/p2pController/request";
-function inputLoop(peerList: AddressIp[], port: number) {
+import { AddressConnection } from "../objects/node/addressConnection";
+function inputLoop(peerList: AddressConnection[], port: number) {
     const rl = readline.createInterface({
         input: process.stdin,
         output: process.stdout,
@@ -17,16 +17,33 @@ function inputLoop(peerList: AddressIp[], port: number) {
         const maxAttempts = 5;
 
         do {
-            listFailed = await broadcastToPeers(
-                peerList.filter(x => x.port !== port),
-                {
-                    data: "test from " + port + "data " + input as string,
-                    type: COMMUICATE.TEST_SAYHI,
-                }
-            );
 
-            // peerList = context.peerList.filter(x => !listFailed.some(s => s.nodeId === x.nodeId));
+            // const listIpCannotConnect: AddressIp[] = [];
+
+            const promises = peerList.map((peer) => {
+
+                return new Promise<void>((resolve) => {
+                    peer.connection.write(JSON.stringify(input));
+                    resolve();
+
+                    // peer.connection.on('error', () => {
+                    //     listIpCannotConnect.push({
+                    //         ip: peer.ip,
+                    //         nodeId: peer.nodeId,
+                    //         port: peer.port,
+                    //     });
+                    //     resolve();
+                    // });
+                });
+            });
+            try {
+                await Promise.allSettled(promises);
+            }
+            catch (ex: any) {
+                console.log(ex)
+            }
             attemptCount++;
+            // return listIpCannotConnect;
         } while (listFailed.length > 0 && attemptCount < maxAttempts);
 
         if (listFailed.length > 0) {
@@ -48,7 +65,8 @@ async function main() {
     node.start(port, portIpSeedNode);
     setInterval(() => {
         console.log(node.getPeerList())
-    }, 1000);
+        console.log(node.getConnection())
+    }, 3000);
     process.on('SIGINT', async () => {
         console.log('Received SIGINT. Terminating...');
         await node.terminate();
@@ -61,7 +79,7 @@ async function main() {
         process.exit();
     });
     setTimeout(() => {
-        inputLoop(node.getPeerList(), port)
+        inputLoop(node.getConnection(), port)
     }, 1000);
 }
 

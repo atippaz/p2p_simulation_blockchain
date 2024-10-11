@@ -58,13 +58,15 @@ export class CreateNode {
   private connectToPeer(peerIp: string, server: net.AddressInfo, context: Context) {
     const [peerAddress, peerPort] = peerIp.split(":");
     const client = new net.Socket();
-    context.connection.push(new AddressConnection(client, +peerPort, peerAddress, true))
+    context.connection.push(new AddressConnection(client, this.blockChain, context, +peerPort, peerAddress, true))
   }
 
   getPeerList() {
     return this.context!.peerList;
   }
-
+  getConnection() {
+    return this.context!.connection
+  }
   getChainData() {
     return this.blockChain;
   }

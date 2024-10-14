@@ -1,58 +1,40 @@
-import * as net from "net";
-
+import { spawn } from "child_process";
+import { CreateNode } from "../objects/node";
+import { AddressConnection } from "../objects/node/addressConnection";
 import readline from "readline";
 import { findAvailablePort } from "./generateUniquePort";
-import { CreateNode } from "../objects/node";
-import { AddressIp, COMMUICATE } from "../objects/node/interface";
-import { AddressConnection } from "../objects/node/addressConnection";
-import { exec } from "child_process";
-function inputLoop(peerList: AddressConnection[], port: number) {
+
+function inputLoop(peerList: AddressConnection[], terminal) {
   const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
+    input: terminal.stdin,  // ใช้ stdin ของ terminal ที่ spawn ขึ้นมา
+    output: terminal.stdout, // ใช้ stdout ของ terminal ที่ spawn ขึ้นมา
   });
 
   rl.on("line", async (input) => {
-    let listFailed: AddressIp[] = [];
+    let listFailed = [];
     let attemptCount = 0;
     const maxAttempts = 5;
 
     do {
-      // const listIpCannotConnect: AddressIp[] = [];
-
       const promises = peerList.map((peer) => {
         return new Promise<void>((resolve) => {
           peer.connection.write(JSON.stringify(input));
           resolve();
-
-          // peer.connection.on('error', () => {
-          //     listIpCannotConnect.push({
-          //         ip: peer.ip,
-          //         nodeId: peer.nodeId,
-          //         port: peer.port,
-          //     });
-          //     resolve();
-          // });
         });
       });
+
       try {
         await Promise.allSettled(promises);
       } catch (ex: any) {
         console.log(ex);
       }
+
       attemptCount++;
-      // return listIpCannotConnect;
     } while (listFailed.length > 0 && attemptCount < maxAttempts);
 
     if (listFailed.length > 0) {
       console.warn(`Failed to connect to peers: ${JSON.stringify(listFailed)}`);
     }
-
-    // blockchain.addBlock(
-    //     new Block(blockchain.chain.length, new Date().toISOString(), input)
-    // );
-    // console.log(`Node on port ${port}: Added block with data: ${input}`);
-    // broadcastBlockchain();
   });
 }
 
@@ -61,19 +43,32 @@ async function main() {
   const port = await findAvailablePort();
   const node = new CreateNode();
   node.start(port, portIpSeedNode);
+
   setInterval(() => {
     console.log(node.getPeerList());
     console.log(node.getConnection().map((x) => x.nodeId));
   }, 3000);
-  exec(
-    `open empty terminal to receive input form keyboard`,
-    (error, stdout, stderr) => {
-      if (error) {
-        console.error("Error:", error);
-        return;
-      }
-    }
-  );
+
+  // เปิด terminal ใหม่โดยใช้ spawn
+  const terminal = spawn('cmd.exe', ['/K'], {
+    stdio: ['pipe', 'pipe', 'pipe'],
+  });
+
+  terminal.stdout.on('data', (data) => {
+    console.log(`Output from terminal: ${data}`);
+  });
+
+  terminal.stderr.on('data', (data) => {
+    console.error(`Error from terminal: ${data}`);
+  });
+
+  terminal.on('close', (code) => {
+    console.log(`Terminal closed with code ${code}`);
+  });
+
+  // ใช้ inputLoop จาก terminal ที่เปิดใหม่
+  inputLoop(node.getConnection(), terminal);
+
   process.on("SIGINT", async () => {
     console.log("Received SIGINT. Terminating...");
     await node.terminate();
@@ -85,9 +80,6 @@ async function main() {
     await node.terminate();
     process.exit();
   });
-  setTimeout(() => {
-    inputLoop(node.getConnection(), port);
-  }, 1000);
 }
 
 main();
